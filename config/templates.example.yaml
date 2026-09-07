@@ -1,0 +1,94 @@
+# =============================================================================
+#  TEMPLATE REGISTRY  --  config/templates.yaml
+# =============================================================================
+#
+#  This file MIRRORS the message templates you have already created and had
+#  APPROVED inside Meta Business Manager. It does not create or approve
+#  anything -- Meta does that.
+#
+#  Its job is to let the application refuse to send a template that is not
+#  approved, is the wrong category, or has the wrong number of variables.
+#
+#    1. cp config/templates.example.yaml config/templates.yaml
+#    2. Create your templates in Meta Business Manager and wait for approval.
+#    3. Copy each template's exact name, language and category in here.
+#    4. Set status to APPROVED only when Meta shows APPROVED.
+#    5. Run: make validate
+#
+#  If status is anything other than APPROVED, sending is blocked. That is
+#  intentional -- it is the check that stops an unapproved send attempt.
+#
+#  CATEGORY RULES (enforced by Meta, and by this application):
+#    MARKETING       - promotions, offers, re-engagement. Requires opt-in.
+#    UTILITY         - about an existing transaction the customer initiated
+#                      (order updates, appointment reminders). Must NOT contain
+#                      promotional content. Disguising marketing as utility gets
+#                      templates rejected and damages quality rating.
+#    AUTHENTICATION  - one-time passcodes only.
+# =============================================================================
+
+templates:
+
+  # ------------------------------------------------------------- UTILITY
+  - name: appointment_reminder_v1
+    language: en
+    category: UTILITY
+    status: APPROVED          # set to PENDING until Meta approves it
+    purpose: >-
+      Remind a patient of an appointment they already booked. Transactional
+      only - contains no offers.
+    body_preview: >-
+      Hello {{1}}, this is a reminder of your {{2}} appointment at BrightSmile
+      Dental on {{3}}. Reply STOP to opt out of reminders.
+    header_format: NONE
+    requires_opt_in: true
+    variables:
+      - { name: first_name,       position: 1, example: "Sarah",            required: true }
+      - { name: service_name,     position: 2, example: "hygienist",        required: true }
+      - { name: appointment_time, position: 3, example: "Tue 14 Oct, 10:30", required: true }
+
+  - name: order_status_update_v1
+    language: en
+    category: UTILITY
+    status: APPROVED
+    purpose: Notify a customer about an order they placed.
+    body_preview: >-
+      Hi {{1}}, your order {{2}} is now {{3}}. Reply STOP to opt out.
+    header_format: NONE
+    requires_opt_in: true
+    variables:
+      - { name: first_name, position: 1, example: "Sarah",    required: true }
+      - { name: order_ref,  position: 2, example: "BR-10482", required: true }
+      - { name: status,     position: 3, example: "ready for collection", required: true }
+
+  # ------------------------------------------------------------- MARKETING
+  # Marketing ALWAYS requires recorded opt-in. requires_opt_in cannot be false.
+  - name: seasonal_offer_v1
+    language: en
+    category: MARKETING
+    status: PENDING           # example of a template that CANNOT be sent yet
+    purpose: Promote a seasonal whitening offer to opted-in patients only.
+    body_preview: >-
+      Hi {{1}}, our {{2}} whitening offer is now open until {{3}}.
+      Reply STOP to unsubscribe at any time.
+    header_format: NONE
+    requires_opt_in: true
+    variables:
+      - { name: first_name,  position: 1, example: "Sarah",       required: true }
+      - { name: offer_name,  position: 2, example: "spring",      required: true }
+      - { name: expiry_date, position: 3, example: "31 May",      required: true }
+
+  # ------------------------------------------------------------- SERVICE
+  - name: optout_confirmation_v1
+    language: en
+    category: UTILITY
+    status: APPROVED
+    purpose: >-
+      One-time confirmation that a customer has been unsubscribed. Sent once,
+      never repeated, and only where permitted.
+    body_preview: >-
+      You have been unsubscribed and will not receive further marketing
+      messages from us. You can still message us any time for help.
+    header_format: NONE
+    requires_opt_in: false    # allowed: this is a UTILITY opt-out receipt
+    variables: []

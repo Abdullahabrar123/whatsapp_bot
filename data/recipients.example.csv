@@ -1,0 +1,5 @@
+external_id,phone_e164,first_name,last_name,locale,timezone,tags,consent_status,consent_source,consent_timestamp,consent_purpose,template_name,template_variables_json
+CUST-001,+12025550101,Alice,Smith,en,America/New_York,vip;dental,opted_in,web_form,2026-06-01T10:00:00Z,marketing,appointment_reminder_v1,"{""1"": ""Alice"", ""2"": ""hygienist"", ""3"": ""tomorrow at 10:00 AM""}"
+CUST-002,+12025550102,Bob,Jones,en,America/New_York,checkup,opted_in,in_store,2026-06-02T14:30:00Z,marketing,appointment_reminder_v1,"{""1"": ""Bob"", ""2"": ""check-up"", ""3"": ""Friday at 2:00 PM""}"
+CUST-003,+12025550103,Charlie,Brown,en,America/New_York,inactive,opted_out,whatsapp_stop,2026-06-03T09:15:00Z,marketing,appointment_reminder_v1,"{""1"": ""Charlie"", ""2"": ""whitening"", ""3"": ""Monday at 11:00 AM""}"
+CUST-004,+12025550104,David,Wilson,en,America/New_York,new,unknown,csv_import,,marketing,appointment_reminder_v1,"{""1"": ""David"", ""2"": ""consultation"", ""3"": ""Tuesday at 3:00 PM""}"

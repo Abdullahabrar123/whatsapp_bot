@@ -1,0 +1,49 @@
+# ---- secrets: never commit ----
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+secrets/
+
+# ---- operator-supplied business data (contains PII) ----
+config/business.yaml
+config/bot.yaml
+config/templates.yaml
+data/recipients.csv
+data/*.csv
+!data/recipients.example.csv
+data/knowledge/*
+!data/knowledge/README.md
+!data/knowledge/*.example.md
+!data/knowledge/.gitkeep
+var/
+reports/
+*.import-report.json
+*.campaign-report.json
+
+# ---- python ----
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
+.coverage
+coverage.xml
+htmlcov/
+dist/
+build/
+
+# ---- local db / index ----
+*.sqlite3
+*.db
+.index/
+
+# ---- editors / os ----
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

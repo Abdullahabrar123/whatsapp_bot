@@ -1,0 +1,156 @@
+# =============================================================================
+#  BOT BEHAVIOUR CONFIGURATION  --  config/bot.yaml
+# =============================================================================
+#
+#  This file controls HOW the bot behaves. It contains no secrets and no
+#  business facts (those live in business.yaml).
+#
+#    1. cp config/bot.example.yaml config/bot.yaml
+#    2. Edit, then run: make validate
+#
+#  Some values below are locked by the application and cannot be weakened.
+#  They are marked LOCKED. Changing them to an unsafe value makes startup fail
+#  on purpose -- these are the controls that keep sending compliant.
+# =============================================================================
+
+# ---------------------------------------------------------------- intents
+# Which customer intents the bot may act on. Remove any you do not want.
+# 'opt_out' and 'human_agent_request' are LOCKED: they must always be present.
+enabled_intents:
+  - greeting
+  - product_inquiry
+  - pricing_inquiry
+  - availability
+  - booking_request
+  - order_status
+  - support_request
+  - complaint
+  - cancellation
+  - refund_request
+  - location_hours
+  - human_agent_request   # LOCKED - required
+  - opt_in
+  - opt_out               # LOCKED - required
+  - unknown
+
+# ---------------------------------------------------------------- confidence
+# How sure the bot must be before it answers on its own.
+#   reply    : below this, the bot asks a clarifying question instead of answering
+#   escalate : below this, the conversation goes to a human
+# escalate must be <= reply.
+thresholds:
+  reply: 0.55
+  escalate: 0.40
+
+# ---------------------------------------------------------------- responses
+max_response_chars: 900          # WhatsApp hard limit is 4096; keep replies short
+response_tone: friendly, concise, professional, never pushy
+enabled_languages:
+  - en
+history_limit: 10                # how many past messages the bot can see
+
+# ---------------------------------------------------------------- model
+model_temperature: 0.2           # low = consistent and factual. Keep below 0.5.
+model_timeout_seconds: 30
+max_retries: 2
+conversation_expiry_hours: 24    # a quiet conversation closes after this
+
+# ---------------------------------------------------------------- hours
+business_hours_behaviour:
+  reply_outside_hours: true
+  outside_hours_message: >-
+    Thanks for your message. We're closed right now, but I can still help with
+    opening times, prices and general questions. Our team will follow up when
+    we reopen.
+  escalate_outside_hours: false
+
+# Quiet hours block BUSINESS-INITIATED sends (campaigns/templates) only.
+# A customer who messages you always gets a reply. Times are in the business
+# timezone set in business.yaml. A window may cross midnight.
+quiet_hours:
+  enabled: true
+  start: "21:00"
+  end: "08:00"
+
+# ---------------------------------------------------------------- rate limits
+rate_limits:
+  inbound_per_contact_per_minute: 20   # anti-flood per customer
+  outbound_per_second: 10.0            # your own pacing ceiling
+  llm_concurrent: 4                    # parallel model calls
+
+# ---------------------------------------------------------------- campaigns
+campaign:
+  batch_size: 50
+  # Pacing between approved sends, in seconds. This exists to be GENTLER than
+  # Meta's limits. It can never be set below 0.05, and it must never be used to
+  # spread a campaign in order to dodge quality detection.
+  delay_between_sends_seconds: 0.2
+
+  # Automatic brakes. If a running campaign crosses these it PAUSES itself.
+  max_failure_rate: 0.10          # 10% of sends failing
+  max_block_rate: 0.02            # 2% of recipients blocking you
+  min_sample_before_pause: 20     # do not judge on tiny samples
+  pause_on_quality_warning: true  # LOCKED - cannot be set to false
+
+# ---------------------------------------------------------------- messages
+supported_message_types:
+  - text
+  - interactive_button_reply
+  - interactive_list_reply
+  - location
+  - image
+  - document
+  - unsupported
+
+# ---------------------------------------------------------------- opt-out
+# Any message consisting of one of these words immediately stops marketing.
+# Matching is case-insensitive and ignores punctuation.
+# Add local-language equivalents here if you serve other languages.
+stop_words:
+  - stop
+  - unsubscribe
+  - cancel
+  - end
+  - quit
+  - optout
+  - opt out
+  - remove me
+  - no more messages
+
+# Phrases that hand the conversation straight to a human.
+handover_keywords:
+  - human
+  - agent
+  - representative
+  - real person
+  - speak to someone
+  - talk to a person
+  - customer service
+  - manager
+
+# Explicit re-subscription. A customer must send one of these on purpose;
+# consent is never restored automatically.
+opt_in_keywords:
+  - start
+  - subscribe
+  - resume
+  - yes please
+
+# ---------------------------------------------------------------- retention
+retention:
+  messages_days: 365
+  conversations_days: 365
+  escalations_days: 730
+  # Consent and suppression records are compliance evidence and are never
+  # deleted by the cleanup job. LOCKED.
+  delete_consent_records: false
+
+# ---------------------------------------------------------------- features
+features:
+  knowledge_retrieval: true
+  llm_responses: true          # false = templated fallback replies only
+  campaigns_enabled: true      # false = blocks all business-initiated sending
+  auto_mark_read: true
+  typing_indicator: false
+  store_message_content: true  # false = store only metadata, no message bodies
+  embeddings_enabled: true     # false = BM25 lexical search only (no Ollama needed)

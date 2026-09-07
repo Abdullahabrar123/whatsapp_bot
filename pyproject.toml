@@ -1,0 +1,123 @@
+[build-system]
+requires = ["setuptools>=69"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "wa-bot-platform"
+version = "1.0.0"
+description = "Configuration-driven WhatsApp Business Platform chatbot on the official Meta Cloud API"
+requires-python = ">=3.12"
+license = { text = "Proprietary" }
+
+dependencies = [
+  "fastapi==0.115.6",
+  "uvicorn[standard]==0.34.0",
+  "pydantic==2.10.4",
+  "pydantic-settings==2.7.0",
+  "SQLAlchemy[asyncio]==2.0.36",
+  "alembic==1.14.0",
+  "asyncpg==0.30.0",
+  "aiosqlite==0.20.0",
+  "greenlet==3.1.1",
+  "redis==5.2.1",
+  "arq==0.26.3",
+  "httpx==0.28.1",
+  "PyYAML==6.0.2",
+  "structlog==24.4.0",
+  "prometheus-client==0.21.1",
+  "cryptography==44.0.0",
+  "phonenumbers==8.13.52",
+  "python-dateutil==2.9.0.post0",
+  "tzdata==2024.2",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest==8.3.4",
+  "pytest-asyncio==0.25.0",
+  "pytest-cov==6.0.0",
+  "respx==0.22.0",
+  "fakeredis==2.26.2",
+  "ruff==0.8.4",
+  "mypy==1.14.0",
+  "bandit==1.8.0",
+  "pip-audit==2.7.3",
+  "types-PyYAML==6.0.12.20240917",
+  "types-python-dateutil==2.9.0.20241206",
+]
+
+[tool.setuptools]
+packages = ["app"]
+
+# ---------------------------------------------------------------- ruff
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+extend-exclude = ["migrations/versions"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "N", "UP", "B", "C4", "SIM", "ASYNC", "S", "RET", "ARG", "PTH"]
+ignore = [
+  "S101",   # assert: used intentionally in tests
+  "B008",   # FastAPI Depends() in defaults is the documented idiom
+  "S104",   # binding 0.0.0.0 inside a container is intended
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["S105", "S106", "S108", "ARG001", "ARG002", "S311"]
+"scripts/*" = ["S105", "S106", "E402"]  # sys.path bootstrap must precede app imports
+# `timeout` on the LLM client is forwarded to httpx, which enforces it natively.
+"app/integrations/llm_client.py" = ["ASYNC109"]
+
+# ---------------------------------------------------------------- mypy
+[tool.mypy]
+python_version = "3.12"
+strict = true
+warn_unreachable = true
+disallow_untyped_defs = true
+disallow_any_generics = true
+no_implicit_reexport = true
+plugins = ["pydantic.mypy"]
+exclude = "^(migrations/|tests/load/)"
+
+[[tool.mypy.overrides]]
+module = ["arq.*", "fakeredis.*", "phonenumbers.*"]
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = ["tests.*", "scripts.*"]
+disallow_untyped_defs = false
+strict = false
+
+# ---------------------------------------------------------------- pytest
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+testpaths = ["tests"]
+addopts = "-q --strict-markers"
+markers = [
+  "live: opt-in tests that talk to real Meta infrastructure (never run in CI)",
+  "load: local load / resilience profile",
+]
+filterwarnings = ["ignore::DeprecationWarning"]
+
+# ---------------------------------------------------------------- coverage
+[tool.coverage.run]
+source = ["app"]
+branch = true
+omit = ["app/workers/arq_runtime.py", "app/main.py"]
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = false
+exclude_lines = [
+  "pragma: no cover",
+  "if TYPE_CHECKING:",
+  "raise NotImplementedError",
+  "@abstractmethod",
+  '^ *[.][.][.] *$',
+]
+
+# ---------------------------------------------------------------- bandit
+[tool.bandit]
+exclude_dirs = ["tests", "migrations", ".venv"]

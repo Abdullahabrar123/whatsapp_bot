@@ -1,0 +1,273 @@
+# =============================================================================
+#  BUSINESS CONFIGURATION  --  config/business.yaml
+# =============================================================================
+#
+#  WHAT THIS FILE IS
+#  This file describes YOUR business to the chatbot. The bot answers customers
+#  using ONLY what is written here (plus files in data/knowledge/). If a fact is
+#  not in this file, the bot says it does not know and offers a human -- it will
+#  not invent prices, policies or availability.
+#
+#  HOW TO USE IT
+#    1. Copy this file:   cp config/business.example.yaml config/business.yaml
+#    2. Edit config/business.yaml with your real details.
+#    3. Validate it:      make validate
+#    4. Restart the app.  No code changes are needed, ever.
+#
+#  SAFETY RULES
+#    * NEVER put an access token, app secret, API key or password in this file.
+#      Those go in .env only. The loader refuses to start if it finds one here.
+#    * This file is listed in .gitignore so your real details are not committed.
+#    * Everything here may be shown to a customer. Do not put internal notes in.
+#
+#  The example below is a FICTIONAL dental clinic. Replace all of it.
+# =============================================================================
+
+# A short machine identifier for this business. Lowercase letters, digits, - and _
+# Used to keep one business's knowledge index separate from another's.
+business_id: brightsmile_dental
+
+name: BrightSmile Dental Care
+industry: Healthcare - Dental
+description: >-
+  A family dental practice offering routine check-ups, hygiene appointments,
+  cosmetic treatments and emergency dental care. Established 2011, serving
+  Manchester and the surrounding area.
+website: https://example-brightsmile.test
+
+address:
+  line1: 42 Example Street
+  line2: Suite 3            # optional, remove if unused
+  city: Manchester
+  region: Greater Manchester   # optional
+  postal_code: M1 2AB
+  country: GB                  # ISO two-letter country code
+
+contact:
+  # The number a customer can CALL. This is NOT the WhatsApp sender identity.
+  # WhatsApp sending always uses META_PHONE_NUMBER_ID from your .env file.
+  phone_display: "+44 161 000 0000"
+  email: hello@example-brightsmile.test
+  support_url: https://example-brightsmile.test/contact   # optional
+
+# IANA timezone name. Controls business hours and quiet hours.
+# Examples: Europe/London, America/New_York, Asia/Dubai, Australia/Sydney
+timezone: Europe/London
+
+# Languages this business can serve. Use two-letter codes ('en') or 'en_GB'.
+supported_languages:
+  - en
+default_language: en
+
+# How the bot should sound. Written in plain English; the bot follows it.
+brand_voice: >-
+  Warm, calm and professional. Short sentences. Reassuring about dental anxiety.
+  Never dismissive of pain. Never gives clinical advice.
+
+# First thing a new customer sees. Keep it under about 200 characters.
+greeting: >-
+  Hello and welcome to BrightSmile Dental Care. I can help with appointments,
+  treatments, prices and opening hours. How can I help you today?
+
+# ---------------------------------------------------------------- opening hours
+# 24-hour HH:MM. Set 'closed: true' for days you do not open.
+business_hours:
+  monday:    { open: "09:00", close: "17:30" }
+  tuesday:   { open: "09:00", close: "17:30" }
+  wednesday: { open: "09:00", close: "17:30" }
+  thursday:  { open: "09:00", close: "19:00" }
+  friday:    { open: "09:00", close: "16:00" }
+  saturday:  { open: "09:00", close: "13:00" }
+  sunday:    { closed: true }
+
+# ---------------------------------------------------------------- what you sell
+# The bot quotes 'price' EXACTLY as written. If a price varies, set it to null
+# (or delete the line) and the bot will offer to arrange a quote instead of
+# guessing. This is how you prevent the bot inventing numbers.
+services:
+  - id: checkup
+    name: Routine Check-up
+    description: Full dental examination including scale and polish assessment.
+    price: "£45.00"
+    currency: GBP
+    duration_minutes: 30
+    available: true
+    tags: [routine, examination]
+
+  - id: hygiene
+    name: Hygienist Appointment
+    description: Professional cleaning, scaling and polishing with our hygienist.
+    price: "£65.00"
+    currency: GBP
+    duration_minutes: 40
+    available: true
+    tags: [hygiene, cleaning]
+
+  - id: whitening
+    name: Teeth Whitening
+    description: Take-home professional whitening kit with custom-fitted trays.
+    price: "£295.00"
+    currency: GBP
+    duration_minutes: 45
+    available: true
+    tags: [cosmetic]
+
+  - id: emergency
+    name: Emergency Appointment
+    description: Same-day assessment for dental pain, swelling or a broken tooth.
+    price: "£75.00"
+    currency: GBP
+    duration_minutes: 20
+    available: true
+    tags: [urgent, pain]
+
+  - id: implants
+    name: Dental Implants
+    # Price genuinely varies per patient, so it is omitted on purpose.
+    # The bot will NOT quote a figure and will offer a consultation instead.
+    description: Titanium implant treatment, planned individually after assessment.
+    currency: GBP
+    available: true
+    tags: [cosmetic, surgical]
+
+# Free-text note appended whenever the bot discusses money.
+pricing_notes: >-
+  All prices are for private patients and include VAT where applicable.
+  Treatment plans are confirmed in writing after an examination.
+
+# ---------------------------------------------------------------- FAQs
+faqs:
+  - id: parking
+    question: Is there parking available?
+    answer: Yes, free patient parking is available at the rear of the building.
+    tags: [practical]
+
+  - id: nhs
+    question: Do you accept NHS patients?
+    answer: >-
+      We are a private practice and do not currently take NHS patients.
+      We offer a monthly payment plan for routine care.
+    tags: [payment]
+
+  - id: nervous
+    question: I am nervous about the dentist. Can you help?
+    answer: >-
+      Absolutely. Please tell our reception when you book and we will allow
+      extra time and talk you through everything before we start.
+    tags: [anxiety]
+
+  - id: children
+    question: Do you treat children?
+    answer: Yes, we see patients from age 3 upwards.
+    tags: [family]
+
+# ---------------------------------------------------------------- policies
+policies:
+  - id: cancellation
+    title: Cancellation policy
+    body: >-
+      Please give at least 24 hours notice to cancel or move an appointment.
+      Missed appointments without notice may be charged at 50% of the fee.
+
+  - id: privacy
+    title: Privacy
+    body: >-
+      We process your data under UK GDPR. Clinical records are kept for the
+      period required by law. You can request a copy at any time.
+
+  - id: payment
+    title: Payment
+    body: >-
+      We accept card and bank transfer. Payment is taken on the day of treatment
+      unless you are on a payment plan.
+
+# ---------------------------------------------------------------- delivery
+# For a clinic this is mostly off. A retailer would enable it.
+delivery:
+  offers_delivery: false
+  methods: []
+  lead_time: null
+  fees: null
+  notes: null
+
+# ---------------------------------------------------------------- appointments
+appointments:
+  enabled: true
+  min_notice_hours: 24          # earliest a customer may book from now
+  max_advance_days: 120         # furthest ahead a customer may book
+  slot_minutes: 30
+  cancellation_notice_hours: 24
+  requires_confirmation: true   # a human confirms before it is final
+  notes: >-
+    The bot can collect a preferred date and time and pass it to reception.
+    It never confirms a booking by itself.
+
+# ---------------------------------------------------------------- refunds
+refunds:
+  enabled: true
+  window_days: 14
+  conditions:
+    - Unused take-home whitening kits in sealed packaging.
+    - Deposits where we cancelled the appointment.
+  process: >-
+    Email hello@example-brightsmile.test with your name and appointment date.
+    Our practice manager responds within two working days.
+  # The bot explains the policy but can never approve a refund. Not editable.
+  bot_may_approve: false
+
+# ---------------------------------------------------------------- locations
+supported_locations:
+  - Manchester
+  - Salford
+  - Stockport
+
+# ---------------------------------------------------------------- emergencies
+# Shown verbatim when a customer describes a medical emergency.
+emergency:
+  enabled: true
+  message: >-
+    If this is a medical emergency, if you have facial swelling affecting your
+    breathing or vision, or uncontrolled bleeding, please call 999 or go to
+    A&E immediately. Do not wait for a reply here.
+  contact: "999 (UK emergency services)"
+
+# ---------------------------------------------------------------- escalation
+escalation:
+  enabled: true
+  # Plain-English descriptions of when a human must take over. These are
+  # matched in addition to the built-in rules (complaints, refunds, low
+  # confidence and explicit requests always escalate no matter what).
+  triggers:
+    - Customer is in severe pain or describes swelling
+    - Customer mentions a complaint, solicitor or legal action
+    - Customer asks about a specific existing treatment plan
+    - Customer asks to speak to a person
+  human_agent_name: Reception Team
+  human_agent_contact: "+44 161 000 0000"
+  hours: Monday to Friday 09:00-17:00
+  sla_minutes: 120
+
+# ---------------------------------------------------------------- guard rails
+# Subjects the bot must refuse and hand to a human. Add anything that would be
+# unsafe, regulated or commercially damaging for an automated answer.
+restricted_subjects:
+  - Clinical diagnosis or treatment advice for a specific patient
+  - Prescription or medication guidance
+  - Interpretation of x-rays or scans
+  - Anything about another patient's records
+  - Employment, staffing or internal business matters
+
+legal_disclaimer: >-
+  Information provided here is general and does not replace a clinical
+  examination or professional dental advice.
+
+# ---------------------------------------------------------------- knowledge
+knowledge:
+  # Extra documents the bot may quote from. Relative paths only.
+  directories:
+    - data/knowledge
+  # Include everything above as searchable knowledge too. Keep this true.
+  include_business_config: true
+  file_extensions:
+    - .md
+    - .txt
