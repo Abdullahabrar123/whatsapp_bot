@@ -42,6 +42,8 @@ from app.domain.enums import (
     Direction,
     EscalationStatus,
     MessageType,
+    TemplateCategory,
+    TemplateStatus,
 )
 
 
@@ -308,6 +310,31 @@ class Campaign(Base, TimestampMixin):
     )
 
     __table_args__ = (UniqueConstraint("business_id", "name", name="uq_campaign_business_name"),)
+
+
+class MessageTemplate(Base, TimestampMixin):
+    """Operator-managed template mirror for the business messaging registry."""
+
+    __tablename__ = "message_templates"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    business_id: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
+    name: Mapped[str] = mapped_column(String(512), nullable=False)
+    language: Mapped[str] = mapped_column(String(16), nullable=False)
+    category: Mapped[TemplateCategory] = mapped_column(
+        enum_column(TemplateCategory, 24), nullable=False
+    )
+    status: Mapped[TemplateStatus] = mapped_column(
+        enum_column(TemplateStatus, 24), default=TemplateStatus.PENDING, nullable=False
+    )
+    body: Mapped[str] = mapped_column(Text, nullable=False)
+    purpose: Mapped[str | None] = mapped_column(Text, nullable=True)
+    requires_opt_in: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    variables: Mapped[list[dict[str, Any]]] = mapped_column(JSON, default=list, nullable=False)
+
+    __table_args__ = (
+        UniqueConstraint("business_id", "name", "language", name="uq_template_business_name_language"),
+    )
 
 
 class CampaignRecipient(Base, TimestampMixin):

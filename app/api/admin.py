@@ -11,12 +11,16 @@ from datetime import UTC, datetime, timedelta
 from typing import Any
 
 from fastapi import APIRouter, Header, HTTPException, Query, Request, status
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
+from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 
 from app.core.db import session_scope
 from app.core.logging import get_logger
 from app.core.settings import get_settings
 from app.domain.phone import normalise_phone
+from app.domain.enums import TemplateCategory, TemplateStatus
+from app.domain.models import MessageTemplate
 from app.repositories.campaigns import CampaignRepository
 from app.repositories.consent import BotStateRepository, ConsentRepository, EscalationRepository
 from app.repositories.contacts import ContactRepository, SuppressionRepository
@@ -76,7 +80,113 @@ class SuppressionRequest(BaseModel):
     detail: str | None = None
 
 
+class TemplateRequest(BaseModel):
+    name: str
+    language: str = "en"
+    category: TemplateCategory
+    status: TemplateStatus = TemplateStatus.PENDING
+    body: str
+    purpose: str | None = None
+    requires_opt_in: bool = True
+    variables: list[dict[str, Any]] = Field(default_factory=list)
+
+
 # ================================================================== Endpoints
+def _template_payload(template: MessageTemplate) -> dict[str, Any]:
+    return {
+        "id": template.id,
+        "name": template.name,
+        "language": template.language,
+        "category": template.category.value,
+        "status": template.status.value,
+        "body": template.body,
+        "purpose": template.purpose,
+        "requires_opt_in": template.requires_opt_in,
+        "variables": template.variables,
+        "created_at": template.created_at.isoformat(),
+        "updated_at": template.updated_at.isoformat(),
+    }
+
+
+@router.get("/templates")
+async def list_templates(request: Request) -> list[dict[str, Any]]:
+    """List templates saved for the configured business."""
+    _verify_admin_auth(
+        request.headers.get("X-Admin-API-Key"), request.headers.get("Authorization")
+    )
+    async with session_scope(request.app.state.session_factory) as session:
+        result = await session.execute(
+            select(MessageTemplate)
+            .where(MessageTemplate.business_id == request.app.state.business_id)
+            .order_by(MessageTemplate.name)
+        )
+        return [_template_payload(template) for template in result.scalars().all()]
+
+
+@router.post("/templates", status_code=status.HTTP_201_CREATED)
+async def create_template(request: Request, body: TemplateRequest) -> dict[str, Any]:
+    """Create a template record for the configured business."""
+    _verify_admin_auth(
+        request.headers.get("X-Admin-API-Key"), request.headers.get("Authorization")
+    )
+    template = MessageTemplate(
+        business_id=request.app.state.business_id,
+        **body.model_dump(),
+    )
+    try:
+        async with session_scope(request.app.state.session_factory) as session:
+            session.add(template)
+            await session.flush()
+            return _template_payload(template)
+    except IntegrityError as exc:
+        raise HTTPException(status_code=409, detail="Template name and language already exist") from exc
+
+
+@router.put("/templates/{template_id}")
+async def update_template(
+    request: Request, template_id: int, body: TemplateRequest
+) -> dict[str, Any]:
+    """Update a saved template without crossing business boundaries."""
+    _verify_admin_auth(
+        request.headers.get("X-Admin-API-Key"), request.headers.get("Authorization")
+    )
+    async with session_scope(request.app.state.session_factory) as session:
+        template = await session.scalar(
+            select(MessageTemplate).where(
+                MessageTemplate.id == template_id,
+                MessageTemplate.business_id == request.app.state.business_id,
+            )
+        )
+        if template is None:
+            raise HTTPException(status_code=404, detail="Template not found")
+        for key, value in body.model_dump().items():
+            setattr(template, key, value)
+        try:
+            await session.flush()
+        except IntegrityError as exc:
+            raise HTTPException(status_code=409, detail="Template name and language already exist") from exc
+        return _template_payload(template)
+
+
+@router.delete("/templates/{template_id}")
+async def delete_template(request: Request, template_id: int) -> dict[str, bool]:
+    """Delete a saved template record."""
+    _verify_admin_auth(
+        request.headers.get("X-Admin-API-Key"), request.headers.get("Authorization")
+    )
+    async with session_scope(request.app.state.session_factory) as session:
+        template = await session.scalar(
+            select(MessageTemplate).where(
+                MessageTemplate.id == template_id,
+                MessageTemplate.business_id == request.app.state.business_id,
+            )
+        )
+        if template is None:
+            raise HTTPException(status_code=404, detail="Template not found")
+        await session.delete(template)
+        return {"deleted": True}
+
+
 @router.get("/status")
 async def get_system_status(request: Request) -> dict[str, Any]:
     """Get system and business configuration status."""
